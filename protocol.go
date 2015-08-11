@@ -7,13 +7,19 @@ import (
 	"math/big"
 )
 
+// Event represents SMP events
 type Event int
 
 const (
+	// Success means the SMP completed with success and the secrets match
 	Success Event = iota
+	// Abort means the SMP protocol has been aborted
 	Abort
+	// Cheated means the SMP protocol has been cheated
 	Cheated
+	// Error means the SMP protocol terminated due an error in the protocol, like a verification failure
 	Error
+	// Failure means the SMP protocol failed due errors extrinsic to the protocol
 	Failure
 )
 
@@ -22,10 +28,12 @@ var (
 	errShortRandomRead   = errors.New("short read from rand source")
 )
 
+// Message represents an SMP message
 type Message interface {
 	received(*Protocol) (Message, error)
 }
 
+// Protocol represents the SMP protocol
 type Protocol struct {
 	Rand     io.Reader
 	Question string
@@ -42,6 +50,7 @@ type Protocol struct {
 	s4 *smp4State
 }
 
+// NewProtocol returns an SMP protocol
 func NewProtocol(version int) *Protocol {
 	return &Protocol{
 		version:  version,
@@ -51,6 +60,8 @@ func NewProtocol(version int) *Protocol {
 	}
 }
 
+// Receive process the incoming message and potentially returns a message
+// addressed to the other peer
 func (p *Protocol) Receive(m Message) (Message, error) {
 	send, err := m.received(p)
 	if err != nil {
@@ -61,6 +72,8 @@ func (p *Protocol) Receive(m Message) (Message, error) {
 	return send, nil
 }
 
+// Compare starts the protocol and generates a message addressed to the other
+// peer
 func (p *Protocol) Compare() (Message, error) {
 	if p.Secret == nil {
 		p.event(Failure)
@@ -78,10 +91,11 @@ func (p *Protocol) Compare() (Message, error) {
 	return m, nil
 }
 
-func (p Protocol) event(e Event) {
-	go func() { p.eventC <- e }()
-}
-
+// Events returns the events channel for this Protocol
 func (p Protocol) Events() <-chan Event {
 	return p.eventC
+}
+
+func (p Protocol) event(e Event) {
+	go func() { p.eventC <- e }()
 }
