@@ -29,6 +29,28 @@ type SMP4 struct {
 	rb *big.Int
 }
 
+func NewSMP4(mpis ...*big.Int) (*SMP4, error) {
+	m := &SMP4{
+		rb: new(big.Int),
+		cr: new(big.Int),
+		d7: new(big.Int),
+	}
+
+	if err := assignMPIs(m, mpis); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (m SMP4) MPIs() []*big.Int {
+	return []*big.Int{
+		m.rb,
+		m.cr,
+		m.d7,
+	}
+}
+
 func (p *Protocol) newSMP4Message(m3 SMP3) (m SMP4, err error) {
 	if p.s4, err = p.newSMP4State(); err != nil {
 		p.event(Failure)
@@ -57,7 +79,7 @@ func (p Protocol) newSMP4State() (s *smp4State, err error) {
 func (p Protocol) verifySMP4(msg SMP4) error {
 	s3 := p.s3
 
-	if !p.isGroupElement(msg.rb) {
+	if !p.IsGroupElement(msg.rb) {
 		return errors.New("Rb is an invalid group element")
 	}
 

@@ -3,10 +3,10 @@ package smp
 import "math/big"
 
 var (
-	P         *big.Int // prime field, defined in RFC3526 as Diffie-Hellman Group 5
-	pMinusTwo *big.Int
-	Q         *big.Int // prime order
-	G1        *big.Int // group generator
+	P *big.Int // prime field, defined in RFC3526 as Diffie-Hellman Group 5
+	//pMinusTwo *big.Int
+	Q  *big.Int // prime order
+	G1 *big.Int // group generator
 )
 
 func init() {
@@ -30,21 +30,6 @@ func init() {
 			"C1B2AE91EE51D6CB0E3179AB1042A95DCF6A9483B84B4B36"+
 			"B3861AA7255E4C0278BA36046511B993FFFFFFFFFFFFFFFF", 16)
 
-	pMinusTwo = sub(P, big.NewInt(2))
+	//pMinusTwo = sub(P, big.NewInt(2))
 	G1 = big.NewInt(2)
-}
-
-func isGroupElement(n *big.Int) bool {
-	return gte(n, G1) && lte(n, pMinusTwo)
-}
-
-func (p Protocol) isGroupElement(n *big.Int) bool {
-	switch p.version {
-	case 3:
-		return isGroupElement(n)
-	case 2:
-		return true
-	}
-
-	panic("unsupported version")
 }

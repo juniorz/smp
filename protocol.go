@@ -7,12 +7,16 @@ import (
 	"math/big"
 )
 
+const Version = 1
+
 // Event represents SMP events
 type Event int
 
 const (
 	// Success means the SMP completed with success and the secrets match
 	Success Event = iota
+	// InProgress means update the auth progress dialog with progress_percent
+	InProgress
 	// Abort means the SMP protocol has been aborted
 	Abort
 	// Cheated means the SMP protocol has been cheated
@@ -30,19 +34,24 @@ var (
 
 // Message represents an SMP message
 type Message interface {
+	MPIs() []*big.Int
 	received(*Protocol) (Message, error)
+}
+
+// Options represents configuration options for the SMP protocol
+type Options interface {
+	ParameterLength() int
+	IsGroupElement(*big.Int) bool
 }
 
 // Protocol represents the SMP protocol
 type Protocol struct {
+	Options
 	Rand     io.Reader
 	Question string
 	Secret   *big.Int
 
 	eventC chan Event
-
-	version int
-
 	smpState
 	s1 *smp1State
 	s2 *smp2State
@@ -51,9 +60,9 @@ type Protocol struct {
 }
 
 // NewProtocol returns an SMP protocol
-func NewProtocol(version int) *Protocol {
+func NewProtocol(options Options) *Protocol {
 	return &Protocol{
-		version:  version,
+		Options:  options,
 		smpState: smpStateExpect1{},
 		Rand:     rand.Reader,
 		eventC:   make(chan Event, 1),
@@ -72,6 +81,13 @@ func (p *Protocol) Receive(m Message) (Message, error) {
 	return send, nil
 }
 
+func (p *Protocol) Abort() (ret Message) {
+	//err is always nil
+	p.smpState, ret, _ = sendSMPAbortAndRestartStateMachine()
+	p.event(Abort)
+	return
+}
+
 // Compare starts the protocol and generates a message addressed to the other
 // peer
 func (p *Protocol) Compare() (Message, error) {
@@ -87,8 +103,17 @@ func (p *Protocol) Compare() (Message, error) {
 	}
 
 	p.smpState = smpStateExpect2{}
+	p.event(InProgress)
 
 	return m, nil
+}
+
+func (p *Protocol) startMessage() (Message, error) {
+	if len(p.Question) > 0 {
+		return p.newSMP1QMessage(p.Question)
+	}
+
+	return p.newSMP1Message()
 }
 
 // Events returns the events channel for this Protocol

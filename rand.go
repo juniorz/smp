@@ -5,19 +5,8 @@ import (
 	"math/big"
 )
 
-func (p Protocol) parameterLength() int {
-	switch p.version {
-	case 2:
-		return 16
-	case 3:
-		return 192
-	}
-
-	panic("unsupported version")
-}
-
 func (p Protocol) generateRandMPIs(mpis []*big.Int) (err error) {
-	b := make([]byte, p.parameterLength())
+	b := make([]byte, p.ParameterLength())
 
 	for i := range mpis {
 		var r *big.Int

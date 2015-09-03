@@ -46,6 +46,36 @@ type SMP3 struct {
 	cr         *big.Int
 }
 
+func NewSMP3(mpis ...*big.Int) (*SMP3, error) {
+	m := &SMP3{
+		pa: new(big.Int),
+		qa: new(big.Int),
+		cp: new(big.Int),
+		d5: new(big.Int),
+		d6: new(big.Int),
+		ra: new(big.Int),
+		cr: new(big.Int),
+		d7: new(big.Int),
+	}
+
+	if err := assignMPIs(m, mpis); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (m SMP3) MPIs() []*big.Int {
+	return []*big.Int{
+		m.pa, m.qa,
+		m.cp,
+		m.d5, m.d6,
+		m.ra,
+		m.cr,
+		m.d7,
+	}
+}
+
 func (p *Protocol) newSMP3Message(m2 SMP2) (m SMP3, err error) {
 	if p.s3, err = p.newSMP3State(); err != nil {
 		p.event(Failure)
@@ -75,15 +105,15 @@ func (p Protocol) newSMP3State() (s *smp3State, err error) {
 }
 
 func (p Protocol) verifySMP3(msg SMP3) error {
-	if !p.isGroupElement(msg.pa) {
+	if !p.IsGroupElement(msg.pa) {
 		return errors.New("Pa is an invalid group element")
 	}
 
-	if !p.isGroupElement(msg.qa) {
+	if !p.IsGroupElement(msg.qa) {
 		return errors.New("Qa is an invalid group element")
 	}
 
-	if !p.isGroupElement(msg.ra) {
+	if !p.IsGroupElement(msg.ra) {
 		return errors.New("Ra is an invalid group element")
 	}
 

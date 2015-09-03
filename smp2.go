@@ -53,6 +53,39 @@ type SMP2 struct {
 	d5, d6   *big.Int
 }
 
+func NewSMP2(mpis ...*big.Int) (*SMP2, error) {
+	m := &SMP2{
+		g2b: new(big.Int),
+		c2:  new(big.Int),
+		d2:  new(big.Int),
+		g3b: new(big.Int),
+		c3:  new(big.Int),
+		d3:  new(big.Int),
+		pb:  new(big.Int),
+		qb:  new(big.Int),
+		cp:  new(big.Int),
+		d5:  new(big.Int),
+		d6:  new(big.Int),
+	}
+
+	if err := assignMPIs(m, mpis); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (m SMP2) MPIs() []*big.Int {
+	return []*big.Int{
+		m.g2b,
+		m.c2, m.d2,
+		m.g3b,
+		m.c3, m.d3,
+		m.pb, m.qb, m.cp,
+		m.d5, m.d6,
+	}
+}
+
 func (p *Protocol) newSMP2Message(m1 SMP1) (m SMP2, err error) {
 	if p.s2, err = p.newSMP2State(); err != nil {
 		p.event(Failure)
@@ -85,19 +118,19 @@ func (p Protocol) newSMP2State() (s *smp2State, err error) {
 }
 
 func (p Protocol) verifySMP2(msg SMP2) error {
-	if !p.isGroupElement(msg.g2b) {
+	if !p.IsGroupElement(msg.g2b) {
 		return errors.New("g2b is an invalid group element")
 	}
 
-	if !p.isGroupElement(msg.g3b) {
+	if !p.IsGroupElement(msg.g3b) {
 		return errors.New("g3b is an invalid group element")
 	}
 
-	if !p.isGroupElement(msg.pb) {
+	if !p.IsGroupElement(msg.pb) {
 		return errors.New("Pb is an invalid group element")
 	}
 
-	if !p.isGroupElement(msg.qb) {
+	if !p.IsGroupElement(msg.qb) {
 		return errors.New("Qb is an invalid group element")
 	}
 

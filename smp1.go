@@ -22,11 +22,48 @@ func (s smp1State) message() SMP1 {
 
 // SMP1 represents the first message in the SMP protocol
 type SMP1 struct {
-	g2a, g3a    *big.Int
-	c2, c3      *big.Int
-	d2, d3      *big.Int
-	hasQuestion bool
-	question    string
+	g2a, g3a *big.Int
+	c2, c3   *big.Int
+	d2, d3   *big.Int
+}
+
+func assignMPIs(m Message, src []*big.Int) error {
+	dest := m.MPIs()
+	if len(src) != len(dest) {
+		return errors.New("not enought MPIs")
+	}
+
+	for i, mpi := range src {
+		*dest[i] = *mpi
+	}
+
+	return nil
+}
+
+func NewSMP1(mpis ...*big.Int) (*SMP1, error) {
+	m := &SMP1{
+		g2a: new(big.Int),
+		c2:  new(big.Int),
+		d2:  new(big.Int),
+		g3a: new(big.Int),
+		c3:  new(big.Int),
+		d3:  new(big.Int),
+	}
+
+	if err := assignMPIs(m, mpis); err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+func (m SMP1) MPIs() []*big.Int {
+	return []*big.Int{
+		m.g2a,
+		m.c2, m.d2,
+		m.g3a,
+		m.c3, m.d3,
+	}
 }
 
 func (p *Protocol) newSMP1Message() (m SMP1, err error) {
@@ -36,12 +73,6 @@ func (p *Protocol) newSMP1Message() (m SMP1, err error) {
 	}
 
 	m = p.s1.message()
-
-	if p.Question != "" {
-		m.hasQuestion = true
-		m.question = p.Question
-	}
-
 	return
 }
 
@@ -61,11 +92,11 @@ func (p Protocol) newSMP1State() (s *smp1State, err error) {
 }
 
 func (p Protocol) verifySMP1(msg SMP1) error {
-	if !p.isGroupElement(msg.g2a) {
+	if !p.IsGroupElement(msg.g2a) {
 		return errors.New("g2a is an invalid group element")
 	}
 
-	if !p.isGroupElement(msg.g3a) {
+	if !p.IsGroupElement(msg.g3a) {
 		return errors.New("g3a is an invalid group element")
 	}
 

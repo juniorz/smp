@@ -14,6 +14,7 @@ type smpStateExpect3 struct{ smpStateBase }
 type smpStateExpect4 struct{ smpStateBase }
 
 func abortState(e error) (smpState, Message, error) {
+	//TODO: should wipe all the intermediate s1..s4 values
 	return smpStateExpect1{}, SMPAbort{}, e
 }
 
@@ -59,6 +60,7 @@ func (smpStateExpect1) receiveMessage1(p *Protocol, m SMP1) (smpState, Message, 
 		return abortStateMachineAndNotifyCheated(p)
 	}
 
+	p.event(InProgress)
 	return smpStateExpect3{}, m2, nil
 }
 
@@ -73,8 +75,7 @@ func (smpStateExpect2) receiveMessage2(p *Protocol, m SMP2) (smpState, Message, 
 		return abortStateMachineAndNotifyCheated(p)
 	}
 
-	//smpEventInProgress(c)
-
+	p.event(InProgress)
 	return smpStateExpect4{}, m3, nil
 }
 
@@ -90,13 +91,12 @@ func (smpStateExpect3) receiveMessage3(p *Protocol, m SMP3) (smpState, Message, 
 		return sendSMPAbortAndRestartStateMachine()
 	}
 
-	p.event(Success)
-
 	msg, err := p.newSMP4Message(m)
 	if err != nil {
 		return abortStateMachineAndNotifyCheated(p)
 	}
 
+	p.event(Success)
 	return smpStateExpect1{}, msg, nil
 }
 
@@ -113,7 +113,6 @@ func (smpStateExpect4) receiveMessage4(p *Protocol, m SMP4) (smpState, Message, 
 	}
 
 	p.event(Success)
-
 	return smpStateExpect1{}, nil, nil
 }
 
